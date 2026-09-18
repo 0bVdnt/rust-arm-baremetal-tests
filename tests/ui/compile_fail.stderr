@@ -1,0 +1,44 @@
+error[E0308]: mismatched types
+  --> $DIR/compile_fail.rs:12:18
+   |
+12 |     let x: u32 = "arm";
+   |            ---   ^^^^^ expected `u32`, found `&str`
+   |            |
+   |            expected due to this
+
+error[E0308]: mismatched types
+  --> $DIR/compile_fail.rs:18:19
+   |
+18 |     let y: bool = 42u32;
+   |            ----   ^^^^^ expected `bool`, found `u32`
+   |            |
+   |            expected due to this
+
+error[E0499]: cannot borrow `buf[_]` as mutable more than once at a time
+  --> $DIR/compile_fail.rs:25:13
+   |
+24 |     let a = &mut buf[0];
+   |             ----------- first mutable borrow occurs here
+25 |     let b = &mut buf[1];
+   |             ^^^^^^^^^^^ second mutable borrow occurs here
+26 |     // use both so neither borrow is dead
+27 |     *a += *b;
+   |     -------- first borrow later used here
+   |
+   = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices
+
+error[E0506]: cannot assign to `*x` because it is borrowed
+  --> $DIR/compile_fail.rs:33:5
+   |
+32 |     let r = &*x;
+   |             --- `*x` is borrowed here
+33 |     *x = 1;
+   |     ^^^^^^ `*x` is assigned to here but it was already borrowed
+34 |     //~^ ERROR cannot assign to `*x` because it is borrowed
+35 |     *r
+   |     -- borrow later used here
+
+error: aborting due to 4 previous errors
+
+Some errors have detailed explanations: E0308, E0499, E0506.
+For more information about an error, try `rustc --explain E0308`.

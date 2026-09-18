@@ -1,11 +1,10 @@
 # Reuse provenance (open-source sources)
 
 All tests are adaptations (bare-metal `--target`, `no_std` shims) of
-open-source originals. The QEMU harness shape (`tests/lib.rs` with
-`custom_test_frameworks` + `#[testcase]`, the shared sibling `helper`
-proc-macro crate, `build.rs` with `arm_targets::process()`, `memory.x`,
-semihosting panic/exit) mirrors the sibling `bft-rust-coretests` /
-`bft-rust-alloctests` suites in this directory. No logic invented from scratch.
+open-source originals. The QEMU harness (`tests/lib.rs` with
+`custom_test_frameworks` + `#[testcase]`, `build.rs` target setup,
+`memory.x` linker staging, semihosting panic/exit) follows the standard
+shape for bare-metal Rust test suites. No logic invented from scratch.
 
 ## rust-lang/rust@1.98.1 `tests/` (MIT/Apache-2.0)
 

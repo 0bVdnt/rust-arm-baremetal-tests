@@ -1,13 +1,14 @@
-// Codegen test 1/2: repr(C) layouts keep C ABI size/align on ARM.
-// Reuse pattern: rust tests/assembly-llvm/*-struct-abi.rs adapted to ARM.
-// Thorough: u32 MMIO reg block, 64-bit DMA descriptor, packed wire header,
-// value-aggregate swap, volatile MMIO — size/align/load/store ABI-correct on
-// 32-bit (4-byte ptr) and 64-bit (8-byte ptr) bare-metal.
+// Codegen test 1/2: C-ABI layouts + control flow lower cleanly on ARM.
+// Reuse pattern: rust tests/assembly-llvm/*-struct-abi.rs + codegen-llvm
+// control-flow tests, adapted to bare-metal.
+// Thorough: MMIO reg block (align 4), u64 DMA descriptor (align 8 even on
+// 32-bit), packed wire header (unaligned), value-aggregate swap, volatile
+// MMIO, plus match-folded-to-select, counted loop with phi, Option unwrap.
 // NOTE: functions alphabetical — LLVM emits IR sorted by symbol (1.98.1).
 //
 // RUN: rustc --target=armv8r-none-eabihf --emit=llvm-ir -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32,A32R8
 // RUN: rustc --target=aarch64-unknown-none --emit=llvm-ir -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A64
-// RUN: rustc --target=armv7a-none-eabihf --emit=llvm-ir -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32,A32V7
+// RUN: rustc --target=armv7a-none-eabi --emit=llvm-ir -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32,A32V7
 
 #![crate_type = "lib"]
 #![no_std]
@@ -40,6 +41,35 @@ pub struct Pair {
     pub hi: u32,
 }
 
+// Small dense match folds to icmp+select (no jump table on ARM).
+// CHECK: icmp
+// CHECK: select
+// CHECK: ret i32
+#[no_mangle]
+pub fn classify(x: u32) -> u32 {
+    match x {
+        0 => 0,
+        1..=9 => 1,
+        _ => 2,
+    }
+}
+
+// CHECK: br i1
+// CHECK: phi
+#[no_mangle]
+pub fn count_until(n: u32, limit: u32) -> u32 {
+    let mut i = 0u32;
+    let mut acc = 0u32;
+    while i < n {
+        acc = acc.wrapping_add(i);
+        i += 1;
+        if acc > limit {
+            break;
+        }
+    }
+    acc
+}
+
 // CHECK: volatile
 #[no_mangle]
 pub unsafe fn mmio_read(addr: *const u32) -> u32 {
@@ -50,6 +80,19 @@ pub unsafe fn mmio_read(addr: *const u32) -> u32 {
 #[no_mangle]
 pub unsafe fn mmio_write(addr: *mut u32, val: u32) {
     unsafe { core::ptr::write_volatile(addr, val) }
+}
+
+// Option unwrap folds to select on optimal targets (no branch).
+// CHECK: select
+#[no_mangle]
+pub fn or_default(x: Option<u32>, d: u32) -> u32 {
+    x.unwrap_or(d)
+}
+
+// CHECK: select
+#[no_mangle]
+pub fn pick(a: u32, b: u32, c: bool) -> u32 {
+    if c { a } else { b }
 }
 
 // CHECK: align 4

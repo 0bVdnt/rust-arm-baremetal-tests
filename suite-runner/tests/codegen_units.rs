@@ -34,15 +34,8 @@ fn cgu_split() {
 }
 
 #[test]
-fn generic_mono() {
+fn generics_and_drop() {
     for t in ALL_TARGETS {
-        mono_case("codegen-units/generic_mono.rs", t, "1");
-    }
-}
-
-#[test]
-fn drop_glue_const() {
-    for t in ALL_TARGETS {
-        mono_case("codegen-units/drop_glue_const.rs", t, "1");
+        mono_case("codegen-units/generics_and_drop.rs", t, "1");
     }
 }

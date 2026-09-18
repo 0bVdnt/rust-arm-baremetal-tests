@@ -1,20 +1,20 @@
-// Assembly test 1/2: integer arithmetic lowers to single ALU ops.
-// Reuse pattern: rust-lang/rust tests/assembly-llvm/ integer arithmetic tests
-// (x86_64-cmp.rs, manual-eq-efficient.rs, niche-prefer-zero.rs) adapted to ARM.
-// Thorough: covers add/sub/mul/bitwise/shift/rotate/compare-select — the ALU
-// subset every ARM backend must get right on A32 (ARMv7-A/R, ARMv8-R) and A64.
-// Generic across A/R profiles; FileCheck prefixes select per-ISA.
-// NOTE: functions are alphabetical — LLVM emits asm sorted by symbol name,
-// so CHECK-LABEL order must match emission order (verified on 1.98.1).
+// Assembly test 1/2: integer ALU + atomics lower to single instructions.
+// Reuse pattern: rust-lang/rust tests/assembly-llvm/ integer + atomic tests
+// adapted to ARM bare-metal (A32 ARMv7-A/R + ARMv8-R, A64).
+// Thorough: add/sub/mul/bitwise/shift/rotate/min-max/overflowing-add plus
+// CAS/RMW/fence/acquire-load — LDREX/STREX forms on v7 (plus dmb), acquire
+// forms (ldaex/stlex/lda) on v8-R, LL/SC on A64.
+// NOTE: functions alphabetical — LLVM emits asm sorted by symbol (1.98.1).
 //
 //@ assembly-output: emit-asm
-// RUN: rustc --target=armv8r-none-eabihf --emit=asm -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32
+// RUN: rustc --target=armv8r-none-eabihf --emit=asm -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32,A32R8
 // RUN: rustc --target=aarch64-unknown-none --emit=asm -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A64
-// RUN: rustc --target=armv7a-none-eabihf --emit=asm -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32
-// RUN: rustc --target=armv7r-none-eabihf --emit=asm -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32
+// RUN: rustc --target=armv7a-none-eabihf --emit=asm -C opt-level=2 %s -o - | FileCheck %s --check-prefixes=CHECK,A32,A32V7
 
 #![crate_type = "lib"]
 #![no_std]
+
+use core::sync::atomic::{AtomicU32, Ordering};
 
 // Single-bitwise ops stay inline (no branches/libcalls).
 // CHECK-LABEL: and_u32
@@ -23,6 +23,48 @@
 #[no_mangle]
 pub fn and_u32(a: u32, b: u32) -> u32 {
     a & b
+}
+
+// CHECK-LABEL: atomic_cas_u32
+// A32R8: ldaex
+// A32R8: stlex
+// A32V7: ldrex
+// A32V7: strex
+// A32V7: dmb
+// A64: ldaxr
+// A64: stlxr
+#[no_mangle]
+pub fn atomic_cas_u32(a: &AtomicU32, expect: u32, next: u32) -> bool {
+    a.compare_exchange(expect, next, Ordering::SeqCst, Ordering::Relaxed).is_ok()
+}
+
+// CHECK-LABEL: atomic_fence_seqcst
+// A32: dmb
+// A64: dmb ish
+#[no_mangle]
+pub fn atomic_fence_seqcst() {
+    core::sync::atomic::fence(Ordering::SeqCst);
+}
+
+// CHECK-LABEL: atomic_fetch_add_u32
+// A32R8: ldaex
+// A32R8: stlex
+// A32V7: ldrex
+// A32V7: strex
+// A64: ldaxr
+// A64: stlxr
+#[no_mangle]
+pub fn atomic_fetch_add_u32(a: &AtomicU32, v: u32) -> u32 {
+    a.fetch_add(v, Ordering::SeqCst)
+}
+
+// CHECK-LABEL: atomic_load_u32
+// A32R8: lda
+// A32V7: dmb
+// A64: ldar
+#[no_mangle]
+pub fn atomic_load_u32(a: &AtomicU32) -> u32 {
+    a.load(Ordering::Acquire)
 }
 
 // Min/max lower to cmp+csel (A64) / cmp+movcc (A32), never a call.

@@ -1,13 +1,17 @@
-// MIR-opt test 1/2: const folding + simplification visible in MIR.
-// Reuse: rust-lang/rust tests/mir-opt/ pattern (generic).
-// Thorough: arithmetic fold, boolean simplification, dead-branch elimination,
-// and struct construction — four independent fold shapes in one file.
+// MIR-opt test 1/2: const folding plus dead-branch elimination in MIR.
+// Reuse: rust-lang/rust tests/mir-opt/ const-fold + simplify-cfg patterns.
+// Thorough: arithmetic/bool/aggregate folds plus an `if false` arm and a
+// const-false feature flag — foldable constants become `const`, dead arms
+// vanish (no trace of the sentinel value).
 // Requires RUSTC_BOOTSTRAP=1 on stable for --emit=mir.
 // RUN: RUSTC_BOOTSTRAP=1 rustc --target=armv8r-none-eabihf --emit=mir -Zmir-opt-level=2 %s -o - | FileCheck %s
 // RUN: RUSTC_BOOTSTRAP=1 rustc --target=aarch64-unknown-none --emit=mir -Zmir-opt-level=2 %s -o - | FileCheck %s
 // CHECK: const 14_u32
 // CHECK: const 42_u64
 // CHECK: const true
+// CHECK: dead_const
+// CHECK-NOT: const 57005_u32
+// CHECK: cfg_flag
 
 #![crate_type = "lib"]
 #![no_std]
@@ -40,4 +44,26 @@ pub struct Pair {
 pub fn folded_pair() -> Pair {
     // constant aggregate construction
     Pair { a: 1 + 2, b: 4 * 5 }
+}
+
+#[no_mangle]
+pub fn dead_const(x: u32) -> u32 {
+    // `false` arm (0xDEAD = 57005) is eliminated.
+    if false {
+        x ^ 0xDEAD
+    } else {
+        x.wrapping_add(1)
+    }
+}
+
+pub const HAS_FEATURE: bool = false;
+
+#[no_mangle]
+pub fn cfg_flag(x: u32) -> u32 {
+    // cold arm is eliminated when HAS_FEATURE is false.
+    if HAS_FEATURE {
+        x.wrapping_mul(3)
+    } else {
+        x.wrapping_mul(2)
+    }
 }

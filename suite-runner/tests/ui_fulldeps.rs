@@ -47,19 +47,13 @@ fn host_run(file: &str, bin: &str) {
 }
 
 #[test]
-fn heap_vec() {
-    cross_builds("ui-fulldeps/heap_vec.rs");
-    host_run("ui-fulldeps/heap_vec.rs", "heap_vec");
+fn collections() {
+    cross_builds("ui-fulldeps/collections.rs");
+    host_run("ui-fulldeps/collections.rs", "collections");
 }
 
 #[test]
 fn semihost_tick() {
     cross_builds("ui-fulldeps/semihost_tick.rs");
     host_run("ui-fulldeps/semihost_tick.rs", "semihost_tick");
-}
-
-#[test]
-fn btree_heap() {
-    cross_builds("ui-fulldeps/btree_heap.rs");
-    host_run("ui-fulldeps/btree_heap.rs", "btree_heap");
 }

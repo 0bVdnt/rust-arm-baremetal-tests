@@ -5,10 +5,10 @@
 #![reexport_test_harness_main = "test_main"]
 #![allow(internal_features)]
 
-// Harness area modules — one per concern, mirroring how bft-rust-coretests
-// and bft-rust-alloctests split tests/*.rs by area. Each test is a
-// `#[testcase]` fn (see helper/) asserting on-target behaviour; the runner
-// below executes them under QEMU semihosting like the sibling suites.
+// Harness area modules — one per concern (integer ALU, floats, atomics,
+// layouts, allocator, coverage probes, dependency chains). Each test is a
+// `#[testcase]` fn (see the `helper` proc-macro crate); the runner below
+// executes them under QEMU semihosting.
 //
 // This harness is dual-architecture: AArch32 enters via `aarch32-rt`'s
 // `#[entry]`, AArch64 via the local `_start` below (same pattern as
@@ -40,9 +40,9 @@ fn panic(_info: &PanicInfo) -> ! {
 static HEAP: Heap = Heap::empty();
 
 // On AArch32 the critical-section impl comes from `aarch32-cpu`'s
-// `critical-section-single-core` feature (same as the sibling suites).
-// AArch64 has no such provider crate here, so supply the equivalent
-// single-core impl locally (mask DAIF, single hart — QEMU virt).
+// `critical-section-single-core` feature. AArch64 has no such provider
+// crate here, so supply the equivalent single-core impl locally
+// (mask DAIF, single hart — QEMU virt).
 #[cfg(target_arch = "aarch64")]
 struct SingleCoreCs;
 

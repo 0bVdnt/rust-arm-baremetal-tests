@@ -28,9 +28,9 @@ fn mir_case(file: &str, target: &str) {
 }
 
 #[test]
-fn const_fold() {
+fn folds() {
     for t in MIR_TARGETS {
-        mir_case("mir-opt/const_fold.rs", t);
+        mir_case("mir-opt/folds.rs", t);
     }
 }
 
@@ -38,12 +38,5 @@ fn const_fold() {
 fn inline_mmio() {
     for t in MIR_TARGETS {
         mir_case("mir-opt/inline_mmio.rs", t);
-    }
-}
-
-#[test]
-fn dead_branch() {
-    for t in MIR_TARGETS {
-        mir_case("mir-opt/dead_branch.rs", t);
     }
 }

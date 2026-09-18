@@ -1,15 +1,20 @@
-// Coverage-map test 2/2: MMIO-poll loop + status match mapping.
-// Reuse: rust tests/coverage/ loop/match mapping tests, adapted to the volatile
-// register-read pattern common on Cortex-R/A (the shape most likely to lose
-// counters to optimization on bare-metal).
+// Coverage-map test 2/2: loops, matches, and combinator chains.
+// Reuse: rust tests/coverage/ loop/match/combinator tests, adapted to the
+// volatile register-read and Result-propagating shapes common on Cortex-R/A.
 // Host-side mapping check (bare-metal needs minicov runtime for target run).
-// NOTE: functions alphabetical (LLVM emits __profc_* sorted, 1.98.1).
+// NOTE: __profc_* globals emit alphabetical (LLVM sorted, 1.98.1).
 // RUN: rustc -C instrument-coverage --emit=llvm-ir %s -o - | FileCheck %s
 
 #![crate_type = "lib"]
 #![no_std]
 
 // CHECK: __llvm_coverage_mapping
+// CHECK: __profc_and_then_chain
+#[no_mangle]
+pub fn and_then_chain(x: Option<u32>) -> Option<u32> {
+    x.and_then(|v| v.checked_add(1)).and_then(|v| v.checked_mul(2))
+}
+
 // CHECK: __profc_decode_cmd
 #[no_mangle]
 pub fn decode_cmd(cmd: u8) -> u8 {
@@ -19,6 +24,12 @@ pub fn decode_cmd(cmd: u8) -> u8 {
         0x80..=0xFE => 2,
         0xFF => 3,
     }
+}
+
+// CHECK: __profc_map_or_default
+#[no_mangle]
+pub fn map_or_default(x: Option<u32>) -> u32 {
+    x.map_or(0xFFFF, |v| v & 0xFF)
 }
 
 // CHECK: __profc_poll_status
@@ -47,4 +58,12 @@ pub unsafe fn poll_volatile(addr: *const u32) -> u32 {
         total = total.wrapping_add(v & 0xFF);
     }
     total
+}
+
+// CHECK: __profc_try_parse
+#[no_mangle]
+pub fn try_parse(buf: &[u8; 4]) -> Result<u32, u8> {
+    let b0 = *buf.first().ok_or(1u8)? as u32;
+    let b1 = *buf.get(1).ok_or(2u8)? as u32;
+    Ok(b0 | (b1 << 8))
 }

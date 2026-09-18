@@ -34,11 +34,6 @@ fn branch_map() {
 }
 
 #[test]
-fn loop_match_map() {
-    map_case("coverage-map/loop_match_map.rs");
-}
-
-#[test]
-fn result_chain_map() {
-    map_case("coverage-map/result_chain_map.rs");
+fn control_map() {
+    map_case("coverage-map/control_map.rs");
 }

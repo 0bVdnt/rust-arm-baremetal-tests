@@ -35,15 +35,8 @@ fn add_fn_rebuild() {
 }
 
 #[test]
-fn change_sig() {
+fn evolution() {
     for t in ALL_TARGETS {
-        incr_case("incremental/change_sig.rs", t);
-    }
-}
-
-#[test]
-fn add_module() {
-    for t in ALL_TARGETS {
-        incr_case("incremental/add_module.rs", t);
+        incr_case("incremental/evolution.rs", t);
     }
 }

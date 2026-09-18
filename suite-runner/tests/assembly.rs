@@ -1,82 +1,64 @@
-//! assembly suite: `--emit=asm` + FileCheck per ISA prefix.
+//! assembly suite: `--emit=asm` + FileCheck per ISA/ABI prefix.
 #[path = "common/mod.rs"]
 mod common;
 
-use common::{
-    assert_success, check_file, data_path, prefixes_for, rustc, TempDir, ALL_TARGETS, HF_TARGETS,
-    SOFT_TARGETS,
-};
+use common::{assert_success, check_file, data_path, rustc, TempDir, ALL_TARGETS};
 
-fn asm_case(file: &str, target: &str) {
+fn asm_case(file: &str, target: &str, prefixes: &[&str]) {
     let src = data_path(file);
     let tmp = TempDir::new("asm");
     let out = tmp.join("out.s");
-    let out_s = |p: &std::path::Path| p.to_string_lossy().into_owned();
+    let s = |p: &std::path::Path| p.to_string_lossy().into_owned();
     let o = rustc(
         Some(target),
         &[
             "--emit=asm".to_string(),
             "--crate-type=lib".to_string(),
-            out_s(&src),
+            s(&src),
             "-o".to_string(),
-            out_s(&out),
+            s(&out),
             "-C".to_string(),
             "opt-level=2".to_string(),
         ],
     );
     assert_success(&format!("{file} compile for {target}"), &o);
     let text = std::fs::read_to_string(&out).unwrap();
-    check_file(&src, &text, &prefixes_for(target));
+    check_file(&src, &text, prefixes);
+}
+
+/// Prefixes for the integer file (same ISA split as the float hardfloat part).
+fn int_prefixes(target: &str) -> Vec<&'static str> {
+    if target.starts_with("aarch64") {
+        vec!["CHECK", "A64"]
+    } else if target.starts_with("armv8r") {
+        vec!["CHECK", "A32", "A32R8"]
+    } else {
+        vec!["CHECK", "A32", "A32V7"]
+    }
+}
+
+/// Prefixes for the float file: hardfloat triples check VFP/NEON lowering,
+/// softfloat triples check aeabi/compiler-rt libcalls.
+fn float_prefixes(target: &str) -> Vec<&'static str> {
+    if target == "aarch64-unknown-none-softfloat" {
+        vec!["CHECK", "SOFT64"]
+    } else if target == "armv7a-none-eabi" {
+        vec!["CHECK", "SOFT32"]
+    } else {
+        int_prefixes(target)
+    }
 }
 
 #[test]
-fn u32_add() {
+fn integer() {
     for t in ALL_TARGETS {
-        asm_case("assembly/u32_add.rs", t);
+        asm_case("assembly/integer.rs", t, &int_prefixes(t));
     }
 }
 
 #[test]
-fn hardfloat_f32_mul() {
-    // Hardfloat ABI only — softfloat triples use softfloat_abi.rs instead.
-    for t in HF_TARGETS {
-        asm_case("assembly/hardfloat_f32_mul.rs", t);
-    }
-}
-
-#[test]
-fn softfloat_abi() {
-    for t in SOFT_TARGETS {
-        let src = data_path("assembly/softfloat_abi.rs");
-        let tmp = TempDir::new("asm");
-        let out = tmp.join("out.s");
-        let s = |p: &std::path::Path| p.to_string_lossy().into_owned();
-        let o = rustc(
-            Some(t),
-            &[
-                "--emit=asm".to_string(),
-                "--crate-type=lib".to_string(),
-                s(&src),
-                "-o".to_string(),
-                s(&out),
-                "-C".to_string(),
-                "opt-level=2".to_string(),
-            ],
-        );
-        assert_success(&format!("assembly/softfloat_abi.rs compile for {t}"), &o);
-        let text = std::fs::read_to_string(&out).unwrap();
-        let prefixes: &[&str] = if t.starts_with("aarch64") {
-            &["CHECK", "SOFT64"]
-        } else {
-            &["CHECK", "SOFT32"]
-        };
-        check_file(&src, &text, prefixes);
-    }
-}
-
-#[test]
-fn atomics() {
+fn float() {
     for t in ALL_TARGETS {
-        asm_case("assembly/atomics.rs", t);
+        asm_case("assembly/float.rs", t, &float_prefixes(t));
     }
 }

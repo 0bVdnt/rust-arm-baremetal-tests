@@ -26,16 +26,11 @@ fn host_run(file: &str, bin: &str) {
 }
 
 #[test]
-fn branch_exec() {
-    host_run("coverage-run/branch_exec.rs", "cov_branch");
+fn covered() {
+    host_run("coverage-run/covered.rs", "cov_covered");
 }
 
 #[test]
 fn partial_loop() {
     host_run("coverage-run/partial_loop.rs", "cov_partial");
-}
-
-#[test]
-fn sat_state() {
-    host_run("coverage-run/sat_state.rs", "cov_sat");
 }

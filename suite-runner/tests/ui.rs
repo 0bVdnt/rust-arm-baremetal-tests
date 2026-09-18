@@ -15,27 +15,34 @@ fn normalize(output: &str, test_file: &std::path::Path) -> String {
     output.replace(&dir as &str, "$DIR")
 }
 
+fn compile(file: &str, target: &str) -> (std::path::PathBuf, std::process::Output) {
+    let src = data_path(file);
+    let tmp = TempDir::new("ui");
+    let out = tmp.join("out.rmeta");
+    let s = |p: &std::path::Path| p.to_string_lossy().into_owned();
+    let o = rustc(
+        Some(target),
+        &[
+            "--crate-type=lib".to_string(),
+            "--emit=metadata".to_string(),
+            s(&src),
+            "-o".to_string(),
+            s(&out),
+        ],
+    );
+    (src, o)
+}
+
 #[test]
-fn type_mismatch() {
-    // check-fail: two E0308s, byte-identical to the blessed .stderr.
+fn compile_fail() {
+    // check-fail: E0308 x2 + E0499 + E0506, byte-identical to blessed .stderr.
     for t in ALL_TARGETS {
-        let src = data_path("ui/type_mismatch.rs");
-        let tmp = TempDir::new("ui");
-        let out = tmp.join("out.rmeta");
-        let s = |p: &std::path::Path| p.to_string_lossy().into_owned();
-        let o = rustc(
-            Some(t),
-            &[
-                "--crate-type=lib".to_string(),
-                "--emit=metadata".to_string(),
-                s(&src),
-                "-o".to_string(),
-                s(&out),
-            ],
-        );
+        let (src, o) = compile("ui/compile_fail.rs", t);
         let err = stderr_of(&o);
-        assert!(!o.status.success(), "type_mismatch must fail on {t}");
-        assert!(err.contains("mismatched types"), "E0308 missing on {t}:\n{err}");
+        assert!(!o.status.success(), "compile_fail must fail on {t}");
+        for code in ["E0308", "E0499", "E0506"] {
+            assert!(err.contains(code), "{code} missing on {t}:\n{err}");
+        }
         let blessed =
             std::fs::read_to_string(src.with_extension("stderr")).expect("blessed .stderr");
         assert_eq!(
@@ -50,20 +57,7 @@ fn type_mismatch() {
 fn dead_code_warn() {
     // build-pass with exactly the four documented lints.
     for t in ALL_TARGETS {
-        let src = data_path("ui/dead_code_warn.rs");
-        let tmp = TempDir::new("ui");
-        let out = tmp.join("out.rmeta");
-        let s = |p: &std::path::Path| p.to_string_lossy().into_owned();
-        let o = rustc(
-            Some(t),
-            &[
-                "--crate-type=lib".to_string(),
-                "--emit=metadata".to_string(),
-                s(&src),
-                "-o".to_string(),
-                s(&out),
-            ],
-        );
+        let (_, o) = compile("ui/dead_code_warn.rs", t);
         let err = stderr_of(&o);
         assert!(o.status.success(), "dead_code_warn must pass on {t}:\n{err}");
         for w in [
@@ -74,30 +68,5 @@ fn dead_code_warn() {
         ] {
             assert!(err.contains(w), "missing warning {w:?} on {t}:\n{err}");
         }
-    }
-}
-
-#[test]
-fn borrowck() {
-    // check-fail: E0499 + E0506.
-    for t in ALL_TARGETS {
-        let src = data_path("ui/borrowck.rs");
-        let tmp = TempDir::new("ui");
-        let out = tmp.join("out.rmeta");
-        let s = |p: &std::path::Path| p.to_string_lossy().into_owned();
-        let o = rustc(
-            Some(t),
-            &[
-                "--crate-type=lib".to_string(),
-                "--emit=metadata".to_string(),
-                s(&src),
-                "-o".to_string(),
-                s(&out),
-            ],
-        );
-        let err = stderr_of(&o);
-        assert!(!o.status.success(), "borrowck must fail on {t}");
-        assert!(err.contains("E0499"), "E0499 missing on {t}:\n{err}");
-        assert!(err.contains("E0506"), "E0506 missing on {t}:\n{err}");
     }
 }

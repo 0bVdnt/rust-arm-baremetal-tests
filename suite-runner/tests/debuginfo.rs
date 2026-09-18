@@ -34,15 +34,8 @@ fn line_step() {
 }
 
 #[test]
-fn struct_dwarf() {
+fn aggregates() {
     for t in ALL_TARGETS {
-        dbg_case("debuginfo/struct_dwarf.rs", t);
-    }
-}
-
-#[test]
-fn array_slice() {
-    for t in ALL_TARGETS {
-        dbg_case("debuginfo/array_slice.rs", t);
+        dbg_case("debuginfo/aggregates.rs", t);
     }
 }

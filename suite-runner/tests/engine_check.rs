@@ -9,10 +9,15 @@ use common::{check_file, data_path, prefixes_for, rustc, suite_dir, TempDir};
 use std::process::Command;
 
 /// Representative target + prefixes per data file — mirrors what the real
-/// suite tests use (hardfloat files only make sense on hf triples, etc.).
+/// suite tests use (float.rs carries both hf and softfloat checks, etc.).
 fn cases_for(file: &str) -> Vec<(String, Vec<String>)> {
-    if file == "assembly/softfloat_abi.rs" {
+    if file == "assembly/float.rs" {
         return vec![
+            ("aarch64-unknown-none".to_string(), vec!["CHECK".to_string(), "A64".to_string()]),
+            (
+                "armv8r-none-eabihf".to_string(),
+                vec!["CHECK".to_string(), "A32".to_string(), "A32R8".to_string()],
+            ),
             (
                 "aarch64-unknown-none-softfloat".to_string(),
                 vec!["CHECK".to_string(), "SOFT64".to_string()],

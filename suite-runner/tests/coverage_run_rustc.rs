@@ -26,16 +26,11 @@ fn host_run(file: &str, bin: &str) {
 }
 
 #[test]
-fn profraw_emit() {
-    host_run("coverage-run-rustc/profraw_emit.rs", "cov_emit");
+fn probes() {
+    host_run("coverage-run-rustc/probes.rs", "cov_probes");
 }
 
 #[test]
 fn host_merge() {
     host_run("coverage-run-rustc/host_merge.rs", "cov_merge");
-}
-
-#[test]
-fn error_probes() {
-    host_run("coverage-run-rustc/error_probes.rs", "cov_err");
 }
