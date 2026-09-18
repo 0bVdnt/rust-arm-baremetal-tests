@@ -1,0 +1,11 @@
+[toolchain]
+channel = "1.98.1"
+targets = [
+  "aarch64-unknown-none",
+  "aarch64-unknown-none-softfloat",
+  "armv8r-none-eabihf",
+  "armv7a-none-eabi",
+  "armv7a-none-eabihf",
+  "armv7r-none-eabihf",
+]
+components = ["rustc", "cargo", "rust-std", "rustfmt"]

@@ -1,0 +1,7 @@
+# suite-runner is a HOST tool (std integration tests driving rustc/QEMU).
+# The parent config defaults `build.target` to armv8r-none-eabihf for the
+# bare-metal harness; override back to host here so bare `cargo test`
+# inside suite-runner/ just works. (An explicit `--target` always wins
+# over both.)
+[build]
+target = "x86_64-unknown-linux-gnu"

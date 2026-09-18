@@ -1,0 +1,68 @@
+[package]
+name = "suite-runner"
+version = "0.1.0"
+edition = "2021"
+description = "Cargo-native driver for the compiletest-style suites"
+license = "MIT OR Apache-2.0"
+autotests = false
+
+[workspace]
+
+[[test]]
+name = "assembly"
+path = "tests/assembly.rs"
+
+[[test]]
+name = "codegen"
+path = "tests/codegen.rs"
+
+[[test]]
+name = "codegen_units"
+path = "tests/codegen_units.rs"
+
+[[test]]
+name = "coverage_map"
+path = "tests/coverage_map.rs"
+
+[[test]]
+name = "coverage_run"
+path = "tests/coverage_run.rs"
+
+[[test]]
+name = "coverage_run_rustc"
+path = "tests/coverage_run_rustc.rs"
+
+[[test]]
+name = "debuginfo"
+path = "tests/debuginfo.rs"
+
+[[test]]
+name = "incremental"
+path = "tests/incremental.rs"
+
+[[test]]
+name = "mir_opt"
+path = "tests/mir_opt.rs"
+
+[[test]]
+name = "pretty"
+path = "tests/pretty.rs"
+
+[[test]]
+name = "ui"
+path = "tests/ui.rs"
+
+[[test]]
+name = "ui_fulldeps"
+path = "tests/ui_fulldeps.rs"
+
+[[test]]
+name = "harness"
+path = "tests/harness.rs"
+
+[[test]]
+name = "engine_check"
+path = "tests/engine_check.rs"
+
+
+

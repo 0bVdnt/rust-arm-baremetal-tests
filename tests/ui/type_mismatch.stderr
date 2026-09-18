@@ -1,0 +1,19 @@
+error[E0308]: mismatched types
+  --> $DIR/type_mismatch.rs:14:18
+   |
+14 |     let x: u32 = "arm";
+   |            ---   ^^^^^ expected `u32`, found `&str`
+   |            |
+   |            expected due to this
+
+error[E0308]: mismatched types
+  --> $DIR/type_mismatch.rs:20:19
+   |
+20 |     let y: bool = 42u32;
+   |            ----   ^^^^^ expected `bool`, found `u32`
+   |            |
+   |            expected due to this
+
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0308`.

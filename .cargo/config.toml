@@ -1,0 +1,41 @@
+[env]
+# The QEMU harness (tests/lib.rs) uses custom_test_frameworks, like the
+# sibling suites. Auto-enable nightly features on stable so bare
+# `cargo test` works; an explicitly exported RUSTC_BOOTSTRAP=0 still wins
+# (config [env] never overrides the real environment).
+RUSTC_BOOTSTRAP = "1"
+
+[build]
+# Default to the primary bare-metal target so bare `cargo test` does the
+# right thing (a host x86_64 build fails inside semihosting with
+# "unsupported target"). Override per-invocation, e.g.
+# `cargo test --target armv7a-none-eabihf`.
+target = "armv8r-none-eabihf"
+# rust-lld is the default linker for these bare-metal targets (self-contained,
+# no arm-none-eabi-gcc needed). We only add linker-search paths via build.rs.
+# Runners mirror rust-embedded/aarch32 .cargo/config.toml (QEMU 9+ syntax).
+
+[target.armv7a-none-eabihf]
+runner = "qemu-system-arm -machine versatileab -cpu cortex-a8 -semihosting -nographic -audio none -kernel"
+
+[target.armv7a-none-eabi]
+runner = "qemu-system-arm -machine versatileab -cpu cortex-a8 -semihosting -nographic -audio none -kernel"
+
+[target.armv7r-none-eabihf]
+runner = "qemu-system-arm -machine versatileab -cpu cortex-r5f -semihosting -nographic -audio none -kernel"
+
+[target.armv8r-none-eabihf]
+# Generic logic validation runs on versatileab+cortex-r52 (proven above).
+# Board-specific mps3-an536 reference (needs mps3-an536 BSP crate for full
+# peripherals): qemu-system-arm -machine mps3-an536 -cpu cortex-r52 -semihosting -nographic -audio none -kernel
+runner = "qemu-system-arm -machine versatileab -cpu cortex-r52 -semihosting -nographic -audio none -kernel"
+
+[target.aarch64-unknown-none]
+# QEMU virt AArch64; firmware must be linked with -Tmemory-aarch64.ld (see below).
+runner = "qemu-system-aarch64 -machine virt -cpu cortex-a53 -semihosting -nographic -audio none -kernel"
+rustflags = ["-C", "link-arg=-Tmemory-aarch64.ld"]
+
+[target.aarch64-unknown-none-softfloat]
+# Same board/startup as hardfloat; only the float ABI differs.
+runner = "qemu-system-aarch64 -machine virt -cpu cortex-a53 -semihosting -nographic -audio none -kernel"
+rustflags = ["-C", "link-arg=-Tmemory-aarch64.ld"]

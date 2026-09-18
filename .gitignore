@@ -1,0 +1,40 @@
+# Rust build output (regenerable via cargo build / cargo test).
+# Covers the package target/ dir and suite-runner's nested one.
+target/
+
+# Compiletest scratch: ad-hoc rustc --emit outputs used while debugging.
+# (suite-runner uses mkdtemp-style dirs under $TMPDIR instead.)
+/tmp/bft-arm
+*.rmeta
+*.rlib
+*.s
+*.ll
+*.o
+*.d
+
+# Coverage artifacts (llvm-profdata/llvm-cov flow + minicov dumps).
+*.profraw
+*.profdata
+*.profdata.json
+*.lcov
+output.profraw
+lcov.info
+tarpaulin-report.html
+cobertura.xml
+
+# Debug leftovers.
+*.gdb-history
+.gdb_history
+
+# Editor / OS noise.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

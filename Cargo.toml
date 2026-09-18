@@ -1,0 +1,39 @@
+[package]
+name = "bft-rust-arm-baremetal-tests"
+version = "0.1.0"
+edition = "2024"
+description = "Generic bare-metal ARM test suite for Rust stable (3 tests x 12 compiletest suites + QEMU semihosting harness)"
+license = "MIT OR Apache-2.0"
+autotests = false
+autobenches = false
+autobins = false
+
+[workspace]
+# suite-runner is a std HOST tool: building it for the bare-metal default
+# target would fail with "can't find crate for std", so it lives outside
+# this workspace (cd suite-runner/ to use it).
+exclude = ["suite-runner"]
+
+[lib]
+path = "lib.rs"
+test = false
+bench = false
+doc = false
+doctest = false
+
+[[test]]
+name = "armbaremetaltests"
+path = "tests/lib.rs"
+
+[build-dependencies]
+arm-targets = { version = "0.4.0", path = "../bft-rust-alloctests/aarch32/arm-targets" }
+
+[dependencies]
+aarch32-cpu = { path = "../bft-rust-alloctests/aarch32/aarch32-cpu", features = ["critical-section-single-core"] }
+aarch32-rt = { path = "../bft-rust-alloctests/aarch32/aarch32-rt" }
+# restore-state-u8 matches aarch32-cpu's critical-section-single-core so the
+# feature unifies (only one restore-state-* may be enabled per build).
+critical-section = { version = "1", features = ["restore-state-u8"] }
+embedded-alloc = "0.6"
+semihosting = { version = "0.1", features = ["stdio", "fs"] }
+helper = { path = "../bft-rust-alloctests/helper" }
