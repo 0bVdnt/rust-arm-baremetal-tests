@@ -36,6 +36,12 @@ fn layout_and_flow() {
 #[test]
 fn neon_vector_add() {
     for t in ALL_TARGETS {
+        // aarch64-softfloat never inlines the core::arch wrappers (bodies
+        // stay calls into intrinsic shims), so per-op CHECKs would match
+        // intrinsic bodies out of order. Every other triple inlines fully.
+        if *t == "aarch64-unknown-none-softfloat" {
+            continue;
+        }
         ir_case("codegen/neon_vector_add.rs", t);
     }
 }

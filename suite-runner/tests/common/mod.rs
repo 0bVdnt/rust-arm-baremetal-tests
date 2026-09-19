@@ -296,9 +296,11 @@ fn match_checks(checks: &[Check], text: &str) -> Result<(), String> {
             None => {
                 let label = if c.kind == Kind::Label { "CHECK-LABEL" } else { "CHECK" };
                 return Err(format!(
-                    "{label} '{}' not found after line {}",
+                    "{label} '{}' not found after line {} (pos={} len={})",
                     c.raw.trim(),
-                    line_of(text, pos)
+                    line_of(text, pos),
+                    pos,
+                    b.len()
                 ));
             }
         }

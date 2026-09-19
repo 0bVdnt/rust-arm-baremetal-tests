@@ -44,3 +44,64 @@ fn cov_saturating() {
     assert_eq!(1u32.saturating_add(2), 3);
     assert_eq!(u32::MAX.saturating_add(1), u32::MAX);
 }
+
+#[testcase]
+fn cov_if_let() {
+    let some: Option<u32> = Some(7);
+    let v = if let Some(x) = some { x * 2 } else { 0 };
+    assert_eq!(v, 14);
+    let none: Option<u32> = None;
+    let w = if let Some(x) = none { x } else { 99 };
+    assert_eq!(w, 99);
+}
+
+#[testcase]
+fn cov_match_guard() {
+    fn classify(x: u32) -> u8 {
+        match x {
+            n if n < 10 => 0,
+            n if n < 100 => 1,
+            _ => 2,
+        }
+    }
+    assert_eq!(classify(5), 0);
+    assert_eq!(classify(50), 1);
+    assert_eq!(classify(500), 2);
+}
+
+#[testcase]
+fn cov_nested_loops() {
+    let mut acc = 0u32;
+    for i in 0..4 {
+        for j in 0..4 {
+            acc += (i == j) as u32;
+        }
+    }
+    assert_eq!(acc, 4);
+}
+
+#[testcase]
+fn cov_while_count() {
+    let mut n = 0u32;
+    let mut x = 100u32;
+    while x > 1 {
+        x /= 2;
+        n += 1;
+    }
+    assert_eq!((n, x), (6, 1));
+}
+
+#[testcase]
+fn cov_early_multi() {
+    fn first_hit(vals: &[u32], target: u32) -> Option<usize> {
+        for (i, v) in vals.iter().enumerate() {
+            if *v == target {
+                return Some(i);
+            }
+        }
+        None
+    }
+    assert_eq!(first_hit(&[5, 6, 7], 6), Some(1));
+    assert_eq!(first_hit(&[5, 6, 7], 9), None);
+    assert_eq!(first_hit(&[], 1), None);
+}

@@ -60,6 +60,30 @@ pub fn convert_i32_f32(a: i32) -> f32 {
     a as f32
 }
 
+// Sign juggling is bit manipulation everywhere: bfi on A32, bif on A64,
+// xor-with-sign-bit on softfloat.
+// CHECK-LABEL: copysign_f32
+// A32: bfi
+// A64: bif
+// SOFT32: bfi
+// SOFT64: bfxil
+#[no_mangle]
+pub fn copysign_f32(a: f32, b: f32) -> f32 {
+    a.copysign(b)
+}
+
+// f32->f64 widening is one convert on hf with DP, a libcall elsewhere.
+// CHECK-LABEL: cvt_f32_f64
+// A32R8: bl __aeabi_f2d
+// A32V7: vcvt.f64.f32
+// A64: fcvt {{d[0-9]+}}, {{s[0-9]+}}
+// SOFT32: bl __aeabi_f2d
+// SOFT64: bl __extendsfdf2
+#[no_mangle]
+pub fn cvt_f32_f64(a: f32) -> f64 {
+    a as f64
+}
+
 // CHECK-LABEL: div_f32
 // A32: vdiv.f32
 // A64: fdiv {{s[0-9]+}}
@@ -67,6 +91,30 @@ pub fn convert_i32_f32(a: i32) -> f32 {
 // SOFT64: bl __divsf3
 #[no_mangle]
 pub fn div_f32(a: f32, b: f32) -> f32 {
+    a / b
+}
+
+// Double precision on hf (v7 has VFPv3-DP, A64 full DP); libcalls on
+// SP-only v8-R default and on softfloat.
+// CHECK-LABEL: f64_add
+// A32R8: bl __aeabi_dadd
+// A32V7: vadd.f64
+// A64: fadd {{d[0-9]+}}, {{d[0-9]+}}, {{d[0-9]+}}
+// SOFT32: bl __aeabi_dadd
+// SOFT64: bl __adddf3
+#[no_mangle]
+pub fn f64_add(a: f64, b: f64) -> f64 {
+    a + b
+}
+
+// CHECK-LABEL: f64_div
+// A32R8: bl __aeabi_ddiv
+// A32V7: vdiv.f64
+// A64: fdiv {{d[0-9]+}}
+// SOFT32: bl __aeabi_ddiv
+// SOFT64: bl __divdf3
+#[no_mangle]
+pub fn f64_div(a: f64, b: f64) -> f64 {
     a / b
 }
 
@@ -123,6 +171,17 @@ pub fn mul_f32(a: f32, b: f32) -> f32 {
 #[no_mangle]
 pub fn mul_f64(a: f64, b: f64) -> f64 {
     a * b
+}
+
+// Negation flips the sign bit inline on every ABI.
+// CHECK-LABEL: neg_f32
+// A32: vneg.f32
+// A64: fneg {{s[0-9]+}}
+// SOFT32: eor
+// SOFT64: eor
+#[no_mangle]
+pub fn neg_f32(a: f32) -> f32 {
+    -a
 }
 
 // Integer ALU is unaffected by the float ABI.

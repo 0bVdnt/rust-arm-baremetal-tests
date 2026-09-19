@@ -7,7 +7,7 @@ covering **2 tests × 12 compiletest suites** (24 tests):
 `coverage-run-rustc`, `debuginfo`, `incremental`, `mir-opt`, `pretty`,
 `ui`, `ui-fulldeps`.
 
-Plus a QEMU semihosting harness (`cargo test`, 34 testcases): a custom
+Plus a QEMU semihosting harness (`cargo test`, 70 testcases): a custom
 `#[test_case]` runner that prints each test over semihosting I/O and exits
 with the guest status, executed on QEMU via the cargo runner.
 
@@ -20,8 +20,8 @@ Targets (all Tier 2 bare-metal, `rust-lld` self-contained — no cross-gcc neede
 * `armv7a-none-eabi` (softfloat ARMv7-A, QEMU `versatileab`)
 
 Every `cargo test --target <triple>` behaves identically on all six
-targets: `Starting test execution` → `Executing 34 tests` →
-`test result: ok. 34 passed; 0 failed` → exit 0.
+targets: `Starting test execution` → `Executing 70 tests` →
+`test result: ok. 70 passed; 0 failed` → exit 0.
 
 ## Reuse-first, generic
 
@@ -51,7 +51,7 @@ memory-aarch64.ld    QEMU virt map for aarch64-unknown-none
 tests/lib.rs         harness root: custom_test_frameworks + dual-arch entry
                      (aarch32-rt on AArch32, local _start on AArch64) +
                      shared heap/boot/custom_runner,
-                     34 testcases via:
+                     70 testcases via:
 tests/alu.rs, float.rs, atomics.rs, layout.rs, alloc_checks.rs,
       coverage_probes.rs, incr_chain.rs
 tests/<suite>/<test>.rs      24 compiletest-style tests (data files, 2 per suite)
@@ -77,14 +77,14 @@ cargo test --target aarch64-unknown-none-softfloat
 cargo test --target armv7a-none-eabihf
 cargo test --target armv7a-none-eabi
 cargo test --target armv7r-none-eabihf
-# → "Starting test execution" / "Executing 34 tests" /
-#   "test result: ok. 34 passed; 0 failed", exit 0, on every target.
+# → "Starting test execution" / "Executing 70 tests" /
+#   "test result: ok. 70 passed; 0 failed", exit 0, on every target.
 
 # Whole harness matrix with summary table
 # (extend via ALL_TARGETS in suite-runner/tests/common/mod.rs):
 cd suite-runner && cargo test --test harness -- --nocapture && cd ..
 # target                      result  tests
-# aarch64-unknown-none        PASS    34/34
+# aarch64-unknown-none        PASS    70/70
 # ...
 
 # Compiler suites — everything is cargo (run from suite-runner/):

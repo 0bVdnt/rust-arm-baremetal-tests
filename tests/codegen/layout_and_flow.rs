@@ -41,6 +41,23 @@ pub struct Pair {
     pub hi: u32,
 }
 
+#[repr(transparent)]
+pub struct Mmio(u32);
+
+// bool stays a single i1 through the pipeline (no int promotion artifact).
+// CHECK: i1
+#[no_mangle]
+pub fn and_flag(a: bool, b: bool) -> bool {
+    a & b
+}
+
+// Indirect calls stay indirect (no devirtualization stunt on bare-metal).
+// CHECK: tail call
+#[no_mangle]
+pub fn call_thunk(f: fn(u32) -> u32, x: u32) -> u32 {
+    f(x)
+}
+
 // Small dense match folds to icmp+select (no jump table on ARM).
 // CHECK: icmp
 // CHECK: select
@@ -125,6 +142,14 @@ pub fn read_status(r: &Regs) -> u16 {
     r.status
 }
 
+// Transparent wrapper reads exactly like its inner u32.
+// CHECK: align 4
+// CHECK: i32
+#[no_mangle]
+pub fn read_transparent(m: &Mmio) -> u32 {
+    m.0
+}
+
 // CHECK: i8
 // CHECK: i16
 #[no_mangle]
@@ -144,4 +169,11 @@ pub fn read_wire_len(h: &WireHdr) -> u16 {
 #[no_mangle]
 pub fn swap_pair(p: Pair) -> Pair {
     Pair { lo: p.hi, hi: p.lo }
+}
+
+// Niche-filling erases Option<NonZeroU32> to a plain i32 (no tag word).
+// CHECK: i32 noundef returned
+#[no_mangle]
+pub fn unwrap_nz(x: Option<core::num::NonZeroU32>) -> u32 {
+    x.map_or(0, |v| v.get())
 }
